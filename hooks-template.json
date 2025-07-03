@@ -1,0 +1,33 @@
+{
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'f=\"/mnt/c/temp/voice/notification.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'"
+          }
+        ]
+      }
+    ],
+    "TaskCompletion": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'f=\"/mnt/c/temp/voice/task_completion.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'"
+          }
+        ]
+      }
+    ],
+    "onToolCall": {
+      "bash": "bash -c 'f=\"/mnt/c/temp/voice/bash_confirm.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'",
+      "Edit": "bash -c 'f=\"/mnt/c/temp/voice/edit_confirm.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'",
+      "Write": "bash -c 'f=\"/mnt/c/temp/voice/write_confirm.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'",
+      "MultiEdit": "bash -c 'f=\"/mnt/c/temp/voice/multiedit_confirm.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'",
+      "NotebookEdit": "bash -c 'f=\"/mnt/c/temp/voice/notebook_confirm.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'"
+    }
+  }
+}
