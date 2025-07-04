@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Claude Code ずんだもんHooks セットアップスクリプト
-# 再現性の高いワンクリックインストールシステム
+# プリビルド音声ファイル専用版
 
 set -euo pipefail
 
@@ -11,6 +11,7 @@ readonly VOICE_DIR="/mnt/c/temp/voice"
 readonly PREBUILT_VOICES_DIR="${SCRIPT_DIR}/voices"
 readonly CLAUDE_CONFIG_DIR="/home/${USER}/.claude"
 readonly CLAUDE_SETTINGS="${CLAUDE_CONFIG_DIR}/settings.json"
+readonly CLAUDE_MAIN_CONFIG="/home/${USER}/.claude.json"
 readonly BACKUP_DIR="${HOME}/.zundamon-hooks-backup"
 
 # カラー出力
@@ -46,20 +47,16 @@ Claude Code ずんだもんHooks セットアップ
   $0 [オプション]
 
 オプション:
-  --prebuilt       プリビルド音声ファイル使用（VOICEVOX不要・推奨）
   --test           動作確認のみ実行
   --uninstall      完全アンインストール
   --force          既存設定を強制上書き
-  --windows        Windows版VOICEVOX使用（デフォルトはDocker版）
   --dry-run        実際の変更は行わず、実行内容のみ表示
   -h, --help       このヘルプを表示
 
 例:
-  $0 --prebuilt     # 最簡単インストール（VOICEVOX不要）
-  $0                # 標準インストール（Docker版VOICEVOX）
-  $0 --windows      # Windows版VOICEVOX用セットアップ
-  $0 --test         # インストール後の動作確認
-  $0 --uninstall    # 完全削除
+  $0               # 簡単インストール（プリビルド音声使用）
+  $0 --test        # インストール後の動作確認
+  $0 --uninstall   # 完全削除
 
 EOF
 }
@@ -76,7 +73,7 @@ check_environment() {
     log_info "WSL2環境を確認"
     
     # 必要コマンド確認
-    local required_commands=(curl jq)
+    local required_commands=(jq)
     for cmd in "${required_commands[@]}"; do
         if ! command -v "$cmd" >/dev/null 2>&1; then
             log_error "必要なコマンドが見つかりません: $cmd"
@@ -102,45 +99,6 @@ check_environment() {
     log_info "Claude Code設定ディレクトリを確認"
     
     return 0
-}
-
-# VOICEVOX接続確認
-check_voicevox() {
-    log_step "VOICEVOX接続確認中..."
-    
-    local voicevox_urls=()
-    
-    if [ "${USE_DOCKER:-true}" = "true" ]; then
-        voicevox_urls+=("http://localhost:50021")
-    else
-        voicevox_urls+=("http://172.29.112.1:50022" "http://172.29.112.1:50021")
-    fi
-    
-    for url in "${voicevox_urls[@]}"; do
-        log_info "VOICEVOX接続テスト: $url"
-        
-        if curl -s --connect-timeout 5 "${url}/version" >/dev/null 2>&1; then
-            local version=$(curl -s "${url}/version")
-            log_info "VOICEVOX接続成功: $url (バージョン: $version)"
-            export VOICEVOX_URL="$url"
-            return 0
-        fi
-    done
-    
-    log_error "VOICEVOXに接続できません"
-    log_info "以下を確認してください:"
-    if [ "${USE_DOCKER:-true}" = "true" ]; then
-        log_info "1. Docker版VOICEVOXが起動しているか: docker ps | grep voicevox"
-        log_info "2. ポート50021がリスニング中か: netstat -tlnp | grep 50021"
-        log_info "3. Docker版推奨理由: IP変更問題を回避"
-    else
-        log_info "1. Windows版VOICEVOXが起動しているか"
-        log_info "2. APIサーバーが有効になっているか"
-        log_info "3. Windows Firewallでポートが許可されているか"
-        log_info "4. 注意: WSL2 IP変更によりアクセス不可になる場合があります"
-    fi
-    
-    return 1
 }
 
 # バックアップ作成
@@ -208,43 +166,7 @@ use_prebuilt_voices() {
     log_info "プリビルド音声ファイル使用完了 ($voice_count ファイル)"
 }
 
-# 音声ファイル生成
-generate_voice_files() {
-    log_step "音声ファイル生成中..."
-    
-    if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] 音声ファイル生成をスキップ"
-        return 0
-    fi
-    
-    # 音声生成スクリプト実行
-    local generate_script="${SCRIPT_DIR}/generate-voices.sh"
-    
-    if [ ! -f "$generate_script" ]; then
-        log_error "音声生成スクリプトが見つかりません: $generate_script"
-        return 1
-    fi
-    
-    local generate_opts=""
-    if [ "${USE_DOCKER:-true}" = "false" ]; then
-        generate_opts="--windows"
-    fi
-    
-    if [ "${FORCE_GENERATE:-false}" = "true" ]; then
-        generate_opts="$generate_opts --force"
-    fi
-    
-    log_info "音声生成実行: $generate_script $generate_opts"
-    
-    if ! "$generate_script" $generate_opts; then
-        log_error "音声ファイル生成に失敗しました"
-        return 1
-    fi
-    
-    log_info "音声ファイル生成完了"
-}
-
-# hooks設定更新
+# hooks設定更新（自動設定）
 update_hooks_settings() {
     log_step "Claude Code hooks設定更新中..."
     
@@ -260,21 +182,72 @@ update_hooks_settings() {
         return 0
     fi
     
-    # 既存設定の読み込み
+    # hooks設定のマージ（settings.jsonとmain config両方に適用）
+    local template_hooks=$(jq '.hooks' "$template_file")
+    
+    # settings.jsonの更新
     local current_settings="{}"
     if [ -f "$CLAUDE_SETTINGS" ]; then
         current_settings=$(cat "$CLAUDE_SETTINGS")
     fi
     
-    # hooks設定のマージ
-    local template_hooks=$(jq '.hooks' "$template_file")
-    
     local updated_settings=$(echo "$current_settings" | jq --argjson hooks "$template_hooks" '.hooks = $hooks')
-    
-    # 設定ファイル更新
     echo "$updated_settings" > "$CLAUDE_SETTINGS"
     
-    log_info "hooks設定更新完了"
+    # .claude.jsonの更新（メイン設定ファイル）
+    local current_main_config="{}"
+    if [ -f "$CLAUDE_MAIN_CONFIG" ]; then
+        current_main_config=$(cat "$CLAUDE_MAIN_CONFIG")
+    fi
+    
+    local updated_main_config=$(echo "$current_main_config" | jq --argjson hooks "$template_hooks" '.hooks = $hooks')
+    echo "$updated_main_config" > "$CLAUDE_MAIN_CONFIG"
+    
+    log_info "hooks設定更新完了（settings.jsonと.claude.json両方）"
+}
+
+# hooks手動登録案内（自動設定失敗時のバックアップ）
+show_manual_hooks_guide() {
+    log_step "手動hooks登録案内"
+    
+    local template_file="${SCRIPT_DIR}/hooks-template.json"
+    
+    log_warn "自動hooks設定が反映されない場合は、以下の手動登録をお試しください："
+    log_info ""
+    log_info "Claude Codeで以下のコマンドを実行："
+    log_info "  /hooks"
+    log_info ""
+    log_info "その後、以下のファイルを選択："
+    log_info "  ${template_file}"
+    log_info ""
+    log_info "hooks登録確認方法："
+    log_info "  Claude Codeで '/hooks' を実行し、現在の設定を確認"
+}
+
+# シェルスクリプトコピー
+copy_shell_scripts() {
+    log_step "シェルスクリプトコピー中..."
+    
+    local hooks_scripts_dir="${CLAUDE_CONFIG_DIR}/hooks-scripts"
+    
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] シェルスクリプトコピーをスキップ"
+        return 0
+    fi
+    
+    # hooks-scriptsディレクトリを作成
+    mkdir -p "$hooks_scripts_dir"
+    
+    # hooks-scriptsディレクトリ全体をコピー
+    if ! cp -r "${SCRIPT_DIR}/hooks-scripts/"* "$hooks_scripts_dir"/; then
+        log_error "hooks-scriptsディレクトリのコピーに失敗しました"
+        return 1
+    fi
+    
+    # 実行権限を付与
+    chmod +x "$hooks_scripts_dir"/*.sh
+    
+    log_info "hooks-scriptsディレクトリコピー完了（配置先: $hooks_scripts_dir）"
 }
 
 # 動作確認
@@ -283,11 +256,6 @@ test_installation() {
     
     # 音声ファイル確認
     local voice_files=(
-        "bash_confirm.wav"
-        "edit_confirm.wav"  
-        "write_confirm.wav"
-        "multiedit_confirm.wav"
-        "notebook_confirm.wav"
         "notification.wav"
         "task_completion.wav"
     )
@@ -307,14 +275,23 @@ test_installation() {
     
     log_info "全ての音声ファイルを確認"
     
-    # hooks設定確認
-    if [ -f "$CLAUDE_SETTINGS" ]; then
-        if ! jq empty "$CLAUDE_SETTINGS" 2>/dev/null; then
+    # hooks設定ファイル確認
+    local hooks_scripts_dir="${CLAUDE_CONFIG_DIR}/hooks-scripts"
+    if [ ! -f "${hooks_scripts_dir}/voice-config.json" ]; then
+        log_error "音声設定ファイルが見つかりません: ${hooks_scripts_dir}/voice-config.json"
+        return 1
+    fi
+    
+    log_info "音声設定ファイルを確認"
+    
+    # hooks設定確認（メイン設定ファイル）
+    if [ -f "$CLAUDE_MAIN_CONFIG" ]; then
+        if ! jq empty "$CLAUDE_MAIN_CONFIG" 2>/dev/null; then
             log_error "Claude Code設定ファイルの形式が無効です"
             return 1
         fi
         
-        if ! jq -e '.hooks.onToolCall.bash' "$CLAUDE_SETTINGS" >/dev/null 2>&1; then
+        if ! jq -e '.hooks.PreToolUse' "$CLAUDE_MAIN_CONFIG" >/dev/null 2>&1; then
             log_error "hooks設定が正しく更新されていません"
             return 1
         fi
@@ -328,7 +305,7 @@ test_installation() {
     # 音声再生テスト
     if [ "${TEST_PLAYBACK:-false}" = "true" ]; then
         log_info "音声再生テスト実行中..."
-        local test_file="${VOICE_DIR}/bash_confirm.wav"
+        local test_file="${VOICE_DIR}/notification.wav"
         
         if powershell.exe -Command "(New-Object Media.SoundPlayer '$(echo $test_file | sed s#/mnt/c#C:#)').PlaySync()" 2>/dev/null; then
             log_info "音声再生テスト成功"
@@ -372,6 +349,18 @@ uninstall() {
         log_info "音声ファイル削除完了"
     fi
     
+    # hooks-scriptsディレクトリ削除
+    local hooks_scripts_dir="${CLAUDE_CONFIG_DIR}/hooks-scripts"
+    if [ -d "$hooks_scripts_dir" ]; then
+        log_info "hooks-scriptsディレクトリ削除中: $hooks_scripts_dir"
+        
+        if [ "$DRY_RUN" != "true" ]; then
+            rm -rf "$hooks_scripts_dir"
+        fi
+        
+        log_info "hooks-scriptsディレクトリ削除完了"
+    fi
+    
     # バックアップディレクトリ削除（任意）
     if [ "${REMOVE_BACKUPS:-false}" = "true" ] && [ -d "$BACKUP_DIR" ]; then
         log_info "バックアップファイル削除中: $BACKUP_DIR"
@@ -410,19 +399,12 @@ main() {
     # デフォルト値
     local command="install"
     export DRY_RUN="false"
-    export USE_DOCKER="true"
-    export USE_PREBUILT="false"
-    export FORCE_GENERATE="false"
     export TEST_PLAYBACK="false"
     export REMOVE_BACKUPS="false"
     
     # 引数解析
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --prebuilt)
-                export USE_PREBUILT="true"
-                shift
-                ;;
             --test)
                 command="test"
                 export TEST_PLAYBACK="true"
@@ -433,11 +415,7 @@ main() {
                 shift
                 ;;
             --force)
-                export FORCE_GENERATE="true"
-                shift
-                ;;
-            --windows)
-                export USE_DOCKER="false"
+                # フォースフラグ（将来の拡張用）
                 shift
                 ;;
             --dry-run)
@@ -472,29 +450,18 @@ main() {
     case $command in
         install)
             check_environment
+            log_info "プリビルド音声ファイルでインストール中..."
+            create_backup
+            create_voice_directory
+            use_prebuilt_voices
+            update_hooks_settings
+            copy_shell_scripts
+            test_installation
             
-            if [ "${USE_PREBUILT}" = "true" ]; then
-                log_info "プリビルド音声ファイルモードでインストール中..."
-                create_backup
-                create_voice_directory
-                use_prebuilt_voices
-                update_hooks_settings
-                test_installation
-                
-                log_info "=== プリビルドセットアップ完了 ==="
-                log_info "VOICEVOX不要でずんだもん音声が利用可能です"
-            else
-                log_info "VOICEVOX音声生成モードでインストール中..."
-                check_voicevox
-                create_backup
-                create_voice_directory
-                generate_voice_files
-                update_hooks_settings
-                test_installation
-                
-                log_info "=== セットアップ完了 ==="
-                log_info "Claude Codeでbashコマンドを実行すると、ずんだもんの音声が再生されます"
-            fi
+            log_info "=== セットアップ完了 ==="
+            log_info "VOICEVOX不要でずんだもん音声が利用可能です"
+            log_info "Claude Codeでbashコマンドを実行すると、ずんだもんの音声が再生されます"
+            show_manual_hooks_guide
             
             log_info "テスト実行: $0 --test"
             ;;

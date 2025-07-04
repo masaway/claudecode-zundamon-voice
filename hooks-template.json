@@ -1,70 +1,34 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks-scripts/PreToolUse.sh"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'f=\"/mnt/c/temp/voice/notification.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'"
+            "command": "~/.claude/hooks-scripts/Notification.sh"
           }
         ]
       }
     ],
-    "TaskCompletion": [
+    "Stop": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'f=\"/mnt/c/temp/voice/task_completion.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'f=\"/mnt/c/temp/voice/bash_confirm.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'f=\"/mnt/c/temp/voice/edit_confirm.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'"
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'f=\"/mnt/c/temp/voice/write_confirm.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'"
-          }
-        ]
-      },
-      {
-        "matcher": "MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'f=\"/mnt/c/temp/voice/multiedit_confirm.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'"
-          }
-        ]
-      },
-      {
-        "matcher": "NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'f=\"/mnt/c/temp/voice/notebook_confirm.wav\"; if [ -f \"$f\" ]; then powershell.exe -Command \"(New-Object Media.SoundPlayer \\\"$(echo $f | sed s#/mnt/c#C:#)\\\").PlaySync()\" 2>/dev/null || echo \"音声再生エラー: $f\"; else echo \"音声ファイルが見つかりません: $f\"; fi'"
+            "command": "~/.claude/hooks-scripts/Stop.sh"
           }
         ]
       }

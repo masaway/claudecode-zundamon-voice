@@ -1,0 +1,8 @@
+{
+  "voice_mappings": {
+    "PreToolUse": " ask_permission.wav",
+    "Notification": "notification.wav", 
+    "Stop": "task_completion.wav"
+  },
+  "voice_dir": "/mnt/c/temp/voice"
+}
