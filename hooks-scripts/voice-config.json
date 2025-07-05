@@ -1,6 +1,6 @@
 {
   "voice_mappings": {
-    "PreToolUse": " ask_permission.wav",
+    "PreToolUse": "ask_permission.wav",
     "Notification": "notification.wav", 
     "Stop": "task_completion.wav"
   },
