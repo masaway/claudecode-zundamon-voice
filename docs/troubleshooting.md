@@ -23,7 +23,7 @@ Claude Codeで以下を実行して現在の設定を確認：
 /hooks
 ```
 
-`PreToolUse`、`Notification`、`Stop`の設定が表示されれば正常です。
+`Notification`、`Stop`の設定が表示されれば正常です。
 
 ### 2. 手動hooks登録（自動設定が反映されない場合）
 上記で設定が表示されない場合、手動登録を試してください：

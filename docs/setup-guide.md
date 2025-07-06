@@ -2,7 +2,6 @@
 
 ## 含まれるスクリプト
 
-- `PreToolUse.sh` - 全ツール実行前の確認音声
 - `Notification.sh` - 通知音声
 - `Stop.sh` - タスク完了音声
 - `play-voice.sh` - 汎用音声再生スクリプト
@@ -40,7 +39,6 @@ curl -s http://localhost:50021/version
 ```json
 {
   "voice_mappings": {
-    "PreToolUse": "custom_notification.wav",
     "Notification": "notification.wav", 
     "Stop": "task_completion.wav"
   },
@@ -50,7 +48,6 @@ curl -s http://localhost:50021/version
 
 | hooks用途 | 設定キー | デフォルトファイル | 説明 |
 |-----------|-----------|-------------------|------|
-| 全ツール実行前 | `PreToolUse` | `notification.wav` | ツール実行前の確認音声 |
 | 通知 | `Notification` | `notification.wav` | 通知音声 |
 | タスク完了 | `Stop` | `task_completion.wav` | タスク完了音声 |
 
@@ -68,8 +65,7 @@ curl -s http://localhost:50021/version
 # hooks-scripts/voice-config.json を編集
 {
   "voice_mappings": {
-    "PreToolUse": "my_custom_voice.wav",
-    "Notification": "notification.wav", 
+    "Notification": "my_custom_voice.wav", 
     "Stop": "task_completion.wav"
   },
   "voice_dir": "/mnt/c/temp/voice"
