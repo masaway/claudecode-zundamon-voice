@@ -56,6 +56,7 @@ chmod +x *.sh
 - **設定ファイル**: `hooks-template.json`
 - **スクリプト配置**: `~/.claude/hooks-scripts/`
 - **設定更新**: `~/.claude/settings.json` と `~/.claude.json` の両方を更新
+- **マッチャーパターン**: 不使用（NotificationとStopのみ）
 
 ### VOICEVOX統合
 - **Docker版**: `http://localhost:50021` (推奨)
@@ -70,11 +71,9 @@ zundamon-hooks-package/
 ├── generate-voices.sh        # 音声生成ツール
 ├── hooks-template.json       # hooks設定テンプレート
 ├── voices/                   # プリビルド音声ファイル
-│   ├── ask_permission.wav
 │   ├── notification.wav
 │   └── task_completion.wav
 └── hooks-scripts/           # hooksスクリプト群
-    ├── PreToolUse.sh        # 全ツール実行前
     ├── Notification.sh      # 通知
     ├── Stop.sh             # タスク完了
     ├── play-voice.sh       # 汎用音声再生
@@ -87,6 +86,11 @@ zundamon-hooks-package/
 1. `hooks-scripts/voice-config.json` でファイルマッピングを設定
 2. 新しい音声ファイルは `/mnt/c/temp/voice/` に配置
 3. PowerShellによる音声再生はWSL2環境で動作
+
+### 音声再生タイミング
+- **Notification**: システム通知時に音声再生
+- **Stop**: タスク完了時に音声再生
+- **PreToolUse**: 削除済み（ツール実行前の音声再生は行わない）
 
 ### デバッグ・確認方法
 ```bash

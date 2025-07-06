@@ -291,7 +291,7 @@ test_installation() {
             return 1
         fi
         
-        if ! jq -e '.hooks.PreToolUse' "$CLAUDE_MAIN_CONFIG" >/dev/null 2>&1; then
+        if ! jq -e '.hooks.Notification' "$CLAUDE_MAIN_CONFIG" >/dev/null 2>&1; then
             log_error "hooks設定が正しく更新されていません"
             return 1
         fi
